@@ -1,61 +1,65 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { signup } from '../api/users';
+import { isEmail, required } from '../utils/validate';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function Signup() {
   const nav = useNavigate();
   const [form, setForm] = useState({ username: '', email: '', password: '' });
-  const [msg, setMsg] = useState('');
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [serverError, setServerError] = useState('');
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const validate = () => {
+    const e = {};
+    if (!required(form.username)) e.username = 'Username is required';
+    if (!isEmail(form.email)) e.email = 'Valid email is required';
+    if (!form.password || form.password.length < 6) e.password = 'Min 6 characters';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
-    setMsg('');
+    setServerError('');
+    if (!validate()) return;
     try {
+      setBusy(true);
       await signup(form);
-      setMsg('Signup successful. Please login.');
-      setTimeout(() => nav('/'), 800);
-    } catch {
-      setMsg('Signup failed.');
+      nav('/login');
+    } catch (err) {
+      setServerError('Signup failed. Try a different email/username.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: '48px auto', fontFamily: 'system-ui' }}>
-      <h2>Signup</h2>
-      <form onSubmit={onSubmit}>
-        <label>Username</label>
-        <input
-          name="username"
-          value={form.username}
-          onChange={onChange}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 12 }}
-        />
-        <label>Email</label>
-        <input
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={onChange}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 12 }}
-        />
-        <label>Password</label>
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={onChange}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 12 }}
-        />
-        {msg && <div style={{ color: '#0a7', marginBottom: 12 }}>{msg}</div>}
-        <button type="submit" style={{ padding: '8px 14px' }}>Create Account</button>
+    <div className="container my-4" style={{maxWidth: 480}}>
+      <h2 className="mb-3">Sign up</h2>
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
+      <form onSubmit={onSubmit} noValidate>
+        <div className="mb-3">
+          <label className="form-label">Username</label>
+          <input className={`form-control ${errors.username ? 'is-invalid' : ''}`} name="username" value={form.username} onChange={onChange}/>
+          {errors.username && <div className="invalid-feedback">{errors.username}</div>}
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Email</label>
+          <input className={`form-control ${errors.email ? 'is-invalid' : ''}`} name="email" value={form.email} onChange={onChange}/>
+          {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Password</label>
+          <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`} name="password" value={form.password} onChange={onChange}/>
+          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+        </div>
+        <button disabled={busy} className="btn btn-primary w-100">{busy ? 'Creating...' : 'Create account'}</button>
       </form>
-      <div style={{ marginTop: 12 }}>
-        Have an account? <Link to="/">Login</Link>
+      <div className="mt-3">
+        Already have an account? <Link to="/login">Log in</Link>
       </div>
     </div>
   );

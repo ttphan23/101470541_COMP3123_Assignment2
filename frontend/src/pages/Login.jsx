@@ -1,53 +1,60 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { login } from '../api/users';
+import { isEmail, required } from '../utils/validate';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
   const nav = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
-  const [err, setErr] = useState('');
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [serverError, setServerError] = useState('');
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const validate = () => {
+    const e = {};
+    if (!isEmail(form.email)) e.email = 'Valid email is required';
+    if (!required(form.password)) e.password = 'Password is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
-    setErr('');
+    setServerError('');
+    if (!validate()) return;
     try {
+      setBusy(true);
       const { data } = await login(form);
       localStorage.setItem('token', data.jwt_token);
       nav('/employees');
-    } catch (e) {
-      setErr('Invalid credentials');
+    } catch (err) {
+      setServerError('Invalid email or password.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: 420, margin: '48px auto', fontFamily: 'system-ui' }}>
-      <h2>Login</h2>
-      <form onSubmit={onSubmit}>
-        <label>Email</label>
-        <input
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={onChange}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 12 }}
-        />
-        <label>Password</label>
-        <input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={onChange}
-          required
-          style={{ width: '100%', padding: 8, marginBottom: 12 }}
-        />
-        {err && <div style={{ color: 'crimson', marginBottom: 12 }}>{err}</div>}
-        <button type="submit" style={{ padding: '8px 14px' }}>Sign In</button>
+    <div className="container my-4" style={{maxWidth: 480}}>
+      <h2 className="mb-3">Log in</h2>
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
+      <form onSubmit={onSubmit} noValidate>
+        <div className="mb-3">
+          <label className="form-label">Email</label>
+          <input className={`form-control ${errors.email ? 'is-invalid' : ''}`} name="email" value={form.email} onChange={onChange}/>
+          {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Password</label>
+          <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`} name="password" value={form.password} onChange={onChange}/>
+          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+        </div>
+        <button disabled={busy} className="btn btn-primary w-100">{busy ? 'Signing in…' : 'Sign in'}</button>
       </form>
-      <div style={{ marginTop: 12 }}>
-        No account? <Link to="/signup">Sign up</Link>
+      <div className="mt-3">
+        No account? <Link to="/signup">Create one</Link>
       </div>
     </div>
   );

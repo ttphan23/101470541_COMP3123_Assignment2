@@ -1,119 +1,103 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createEmployee, getEmployee, updateEmployee } from '../api/employees';
+import React, { useState } from 'react';
+import { isEmail, required, positiveNumber } from '../utils/validate';
 
-export default function EmployeeForm({ edit }) {
-  const nav = useNavigate();
-  const { id } = useParams();
-  const qc = useQueryClient();
-
+export default function EmployeeForm({ initial = {}, onSubmit, submitLabel = 'Create' }) {
   const [form, setForm] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    position: '',
-    salary: '',
-    date_of_joining: '',
-    department: '',
+    first_name: initial.first_name || '',
+    last_name: initial.last_name || '',
+    email: initial.email || '',
+    position: initial.position || '',
+    salary: initial.salary ?? '',
+    date_of_joining: initial.date_of_joining ? initial.date_of_joining.substring(0,10) : '',
+    department: initial.department || '',
     profile_image: null
   });
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const [serverError, setServerError] = useState('');
 
-  const { data: existing } = useQuery({
-    queryKey: ['employee', id],
-    queryFn: () => getEmployee(id),
-    enabled: !!edit && !!id
-  });
+  const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const onFile = (e) => setForm({ ...form, profile_image: e.target.files[0] });
 
-  useEffect(() => {
-    if (existing && edit) {
-      setForm({
-        first_name: existing.first_name || '',
-        last_name: existing.last_name || '',
-        email: existing.email || '',
-        position: existing.position || '',
-        salary: existing.salary ?? '',
-        date_of_joining: existing.date_of_joining ? existing.date_of_joining.substring(0,10) : '',
-        department: existing.department || '',
-        profile_image: null
-      });
-    }
-  }, [existing, edit]);
-
-  const onChange = (e) => {
-    const { name, value, files } = e.target;
-    if (files && files.length) {
-      setForm({ ...form, [name]: files[0] });
-    } else {
-      setForm({ ...form, [name]: value });
-    }
+  const validate = () => {
+    const e = {};
+    if (!required(form.first_name)) e.first_name = 'First name is required';
+    if (!required(form.last_name)) e.last_name = 'Last name is required';
+    if (!isEmail(form.email)) e.email = 'Valid email is required';
+    if (!required(form.position)) e.position = 'Position is required';
+    if (!positiveNumber(form.salary)) e.salary = 'Salary must be a positive number';
+    if (!required(form.department)) e.department = 'Department is required';
+    if (!required(form.date_of_joining)) e.date_of_joining = 'Join date is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const mutation = useMutation({
-    mutationFn: async () => {
-      if (edit) return updateEmployee(id, form);
-      return createEmployee(form);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['employees'] });
-      qc.invalidateQueries({ queryKey: ['employees', 'search'] });
-      nav('/employees');
-    }
-  });
-
-  const onSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    mutation.mutate();
+    setServerError('');
+    if (!validate()) return;
+    try {
+      setBusy(true);
+      await onSubmit({
+        ...form,
+        date_of_joining: new Date(form.date_of_joining).toISOString(),
+      });
+    } catch (err) {
+      setServerError('Save failed. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
-    <div style={{ maxWidth: 720, margin: '28px auto', fontFamily: 'system-ui' }}>
-      <h2>{edit ? 'Edit Employee' : 'Add Employee'}</h2>
-      <form onSubmit={onSubmit}>
-        <div style={row}>
-          <label style={label}>First Name</label>
-          <input name="first_name" value={form.first_name} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Last Name</label>
-          <input name="last_name" value={form.last_name} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Email</label>
-          <input name="email" type="email" value={form.email} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Position</label>
-          <input name="position" value={form.position} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Salary</label>
-          <input name="salary" value={form.salary} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Date of Joining</label>
-          <input name="date_of_joining" type="date" value={form.date_of_joining} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Department</label>
-          <input name="department" value={form.department} onChange={onChange} required style={input}/>
-        </div>
-        <div style={row}>
-          <label style={label}>Profile Image</label>
-          <input name="profile_image" type="file" accept="image/*" onChange={onChange} style={{ padding: 6 }}/>
-        </div>
+    <form onSubmit={handleSubmit} noValidate>
+      {serverError && <div className="alert alert-danger">{serverError}</div>}
 
-        <div style={{ marginTop: 12 }}>
-          <button type="submit" style={{ marginRight: 10 }} disabled={mutation.isLoading}>
-            {mutation.isLoading ? 'Saving…' : (edit ? 'Update' : 'Create')}
-          </button>
-          <button type="button" onClick={() => nav('/employees')}>Cancel</button>
+      <div className="row g-3">
+        <div className="col-md-6">
+          <label className="form-label">First name</label>
+          <input className={`form-control ${errors.first_name ? 'is-invalid' : ''}`} name="first_name" value={form.first_name} onChange={onChange}/>
+          {errors.first_name && <div className="invalid-feedback">{errors.first_name}</div>}
         </div>
-      </form>
-    </div>
+        <div className="col-md-6">
+          <label className="form-label">Last name</label>
+          <input className={`form-control ${errors.last_name ? 'is-invalid' : ''}`} name="last_name" value={form.last_name} onChange={onChange}/>
+          {errors.last_name && <div className="invalid-feedback">{errors.last_name}</div>}
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">Email</label>
+          <input className={`form-control ${errors.email ? 'is-invalid' : ''}`} name="email" value={form.email} onChange={onChange}/>
+          {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+        </div>
+        <div className="col-md-6">
+          <label className="form-label">Position</label>
+          <input className={`form-control ${errors.position ? 'is-invalid' : ''}`} name="position" value={form.position} onChange={onChange}/>
+          {errors.position && <div className="invalid-feedback">{errors.position}</div>}
+        </div>
+        <div className="col-md-4">
+          <label className="form-label">Salary</label>
+          <input className={`form-control ${errors.salary ? 'is-invalid' : ''}`} name="salary" value={form.salary} onChange={onChange}/>
+          {errors.salary && <div className="invalid-feedback">{errors.salary}</div>}
+        </div>
+        <div className="col-md-4">
+          <label className="form-label">Date of Joining</label>
+          <input type="date" className={`form-control ${errors.date_of_joining ? 'is-invalid' : ''}`} name="date_of_joining" value={form.date_of_joining} onChange={onChange}/>
+          {errors.date_of_joining && <div className="invalid-feedback">{errors.date_of_joining}</div>}
+        </div>
+        <div className="col-md-4">
+          <label className="form-label">Department</label>
+          <input className={`form-control ${errors.department ? 'is-invalid' : ''}`} name="department" value={form.department} onChange={onChange}/>
+          {errors.department && <div className="invalid-feedback">{errors.department}</div>}
+        </div>
+        <div className="col-12">
+          <label className="form-label">Profile Image (optional)</label>
+          <input type="file" className="form-control" name="profile_image" onChange={onFile} accept="image/*"/>
+        </div>
+      </div>
+
+      <button disabled={busy} className="btn btn-primary mt-3">
+        {busy ? 'Saving…' : submitLabel}
+      </button>
+    </form>
   );
 }
-
-const row = { display: 'grid', gridTemplateColumns: '160px 1fr', gap: 10, marginBottom: 12, alignItems: 'center' };
-const label = { fontWeight: 600 };
-const input = { padding: 8 };
