@@ -1,4 +1,3 @@
-// src/api/employees.js
 import { api } from './client';
 
 // LIST ALL
@@ -7,7 +6,7 @@ export const getEmployees = async () => {
   return data;
 };
 
-// SEARCH (department / position)
+// SEARCH
 export const searchEmployees = async ({ department, position }) => {
   const params = {};
   if (department) params.department = department;
@@ -22,9 +21,8 @@ export const getEmployee = async (id) => {
   return data;
 };
 
-// CREATE (multipart, supports file)
+// CREATE
 export const createEmployee = async (payload) => {
-  // payload can be { first_name, last_name, email, position, salary, date_of_joining, department, profile_image (File) }
   const fd = new FormData();
   Object.entries(payload).forEach(([k, v]) => {
     if (v !== undefined && v !== null && v !== '') {
@@ -37,7 +35,7 @@ export const createEmployee = async (payload) => {
   return data;
 };
 
-// UPDATE (multipart, optional new image)
+// UPDATE
 export const updateEmployee = async (id, payload) => {
   const fd = new FormData();
   Object.entries(payload).forEach(([k, v]) => {
@@ -51,7 +49,7 @@ export const updateEmployee = async (id, payload) => {
   return data;
 };
 
-// DELETE (path param, not ?eid=)
+// DELETE
 export const deleteEmployee = async (id) => {
   const { data } = await api.delete(`/emp/employees/${id}`);
   return data;

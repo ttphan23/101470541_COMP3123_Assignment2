@@ -1,4 +1,4 @@
-import client from './client';
+import { api } from './client';
 
-export const login = (data) => client.post('/api/v1/user/login', data);
-export const signup = (data) => client.post('/api/v1/user/signup', data);
+export const login = (payload) => api.post('/user/login', payload);
+export const signup = (payload) => api.post('/user/signup', payload);

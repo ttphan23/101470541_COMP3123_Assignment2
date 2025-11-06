@@ -30,7 +30,6 @@ export default function Employees() {
 
   useEffect(() => {
     refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [useSearch]);
 
   const logout = () => {
@@ -161,7 +160,7 @@ export default function Employees() {
   );
 }
 
-/* --- inline styles --- */
+/*  inline styles  */
 const wrap = {
   display: 'grid',
   gridTemplateColumns: '260px 1fr',
