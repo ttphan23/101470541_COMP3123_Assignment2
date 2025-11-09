@@ -29,7 +29,7 @@ export default function Signup() {
       setBusy(true);
       await signup(form);
       nav('/login');
-    } catch (err) {
+    } catch {
       setServerError('Signup failed. Try a different email/username.');
     } finally {
       setBusy(false);
@@ -37,28 +37,50 @@ export default function Signup() {
   };
 
   return (
-    <div className="container my-4" style={{maxWidth: 480}}>
-      <h2 className="mb-3">Sign up</h2>
+    <div className="container" style={{ maxWidth: 520, margin: '80px auto', padding: 20 }}>
+      <h2 className="mb-3 text-center">Sign up</h2>
       {serverError && <div className="alert alert-danger">{serverError}</div>}
       <form onSubmit={onSubmit} noValidate>
         <div className="mb-3">
-          <label className="form-label">Username</label>
-          <input className={`form-control ${errors.username ? 'is-invalid' : ''}`} name="username" value={form.username} onChange={onChange}/>
+          <label htmlFor="username" className="form-label">Username</label>
+          <input
+            id="username"
+            className={`form-control ${errors.username ? 'is-invalid' : ''}`}
+            name="username"
+            value={form.username}
+            onChange={onChange}
+          />
           {errors.username && <div className="invalid-feedback">{errors.username}</div>}
         </div>
         <div className="mb-3">
-          <label className="form-label">Email</label>
-          <input className={`form-control ${errors.email ? 'is-invalid' : ''}`} name="email" value={form.email} onChange={onChange}/>
+          <label htmlFor="email" className="form-label">Email</label>
+          <input
+            id="email"
+            type="email"
+            className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+            name="email"
+            value={form.email}
+            onChange={onChange}
+          />
           {errors.email && <div className="invalid-feedback">{errors.email}</div>}
         </div>
         <div className="mb-3">
-          <label className="form-label">Password</label>
-          <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`} name="password" value={form.password} onChange={onChange}/>
-          {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+          <label htmlFor="password" className="form-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+            name="password"
+            value={form.password}
+            onChange={onChange}
+          />
+        {errors.password && <div className="invalid-feedback">{errors.password}</div>}
         </div>
-        <button disabled={busy} className="btn btn-primary w-100">{busy ? 'Creating...' : 'Create account'}</button>
+        <button disabled={busy} className="btn btn-primary w-100">
+          {busy ? 'Creating...' : 'Create account'}
+        </button>
       </form>
-      <div className="mt-3">
+      <div className="mt-3 text-center">
         Already have an account? <Link to="/login">Log in</Link>
       </div>
     </div>

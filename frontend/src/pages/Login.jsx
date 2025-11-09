@@ -29,7 +29,7 @@ export default function Login() {
       const { data } = await login(form);
       localStorage.setItem('token', data.jwt_token);
       nav('/employees');
-    } catch (err) {
+    } catch {
       setServerError('Invalid email or password.');
     } finally {
       setBusy(false);
@@ -37,23 +37,39 @@ export default function Login() {
   };
 
   return (
-    <div className="container my-4" style={{maxWidth: 480}}>
-      <h2 className="mb-3">Log in</h2>
+    <div className="container" style={{ maxWidth: 520, margin: '80px auto', padding: 20 }}>
+      <h2 className="mb-3 text-center">Log in</h2>
       {serverError && <div className="alert alert-danger">{serverError}</div>}
       <form onSubmit={onSubmit} noValidate>
         <div className="mb-3">
-          <label className="form-label">Email</label>
-          <input className={`form-control ${errors.email ? 'is-invalid' : ''}`} name="email" value={form.email} onChange={onChange}/>
+          <label htmlFor="email" className="form-label">Email</label>
+          <input
+            id="email"
+            type="email"
+            className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+            name="email"
+            value={form.email}
+            onChange={onChange}
+          />
           {errors.email && <div className="invalid-feedback">{errors.email}</div>}
         </div>
         <div className="mb-3">
-          <label className="form-label">Password</label>
-          <input type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`} name="password" value={form.password} onChange={onChange}/>
+          <label htmlFor="password" className="form-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+            name="password"
+            value={form.password}
+            onChange={onChange}
+          />
           {errors.password && <div className="invalid-feedback">{errors.password}</div>}
         </div>
-        <button disabled={busy} className="btn btn-primary w-100">{busy ? 'Signing in…' : 'Sign in'}</button>
+        <button disabled={busy} className="btn btn-primary w-100">
+          {busy ? 'Signing in…' : 'Sign in'}
+        </button>
       </form>
-      <div className="mt-3">
+      <div className="mt-3 text-center">
         No account? <Link to="/signup">Create one</Link>
       </div>
     </div>
