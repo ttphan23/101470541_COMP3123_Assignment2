@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getEmployees, searchEmployees, deleteEmployee } from '../api/employees';
@@ -28,10 +28,6 @@ export default function Employees() {
 
   const { data, isLoading, isFetching, refetch } = useQuery({ queryKey, queryFn });
 
-  useEffect(() => {
-    refetch();
-  }, [useSearch, refetch]);
-
   const logout = () => {
     localStorage.removeItem('token');
     nav('/');
@@ -40,7 +36,6 @@ export default function Employees() {
   const onDelete = async (id) => {
     if (!window.confirm('Delete this employee?')) return;
     await deleteEmployee(id);
-    // Refresh both lists (all & search)
     qc.invalidateQueries({ queryKey: ['employees', 'all'] });
     qc.invalidateQueries({
       queryKey: ['employees', 'search', filters.department, filters.position],
@@ -49,18 +44,17 @@ export default function Employees() {
 
   const onSubmitFilters = (e) => {
     e?.preventDefault();
-    setUseSearch(true);
-    refetch();
+    setUseSearch(true);      // queryKey changes -> auto refetch
+    refetch();               // optional immediate refresh
   };
 
   const onClear = () => {
     setFilters({ department: '', position: '' });
-    setUseSearch(false);
+    setUseSearch(false);     // queryKey changes -> auto refetch
   };
 
   return (
     <div style={wrap}>
-      {/* Sidebar */}
       <aside style={sidebar}>
         <h3 style={{ margin: '0 0 16px' }}>Filters</h3>
         <form onSubmit={onSubmitFilters}>
@@ -94,7 +88,6 @@ export default function Employees() {
         <button onClick={logout} style={{ ...btnGhost, marginTop: 8 }}>Logout</button>
       </aside>
 
-      {/* Main content */}
       <main style={content}>
         <div style={headerRow}>
           <h2 style={{ margin: 0 }}>Employees</h2>
@@ -167,7 +160,7 @@ export default function Employees() {
   );
 }
 
-/*  inline styles  */
+/* styles */
 const wrap = {
   display: 'grid',
   gridTemplateColumns: '260px 1fr',
