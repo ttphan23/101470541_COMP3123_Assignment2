@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getEmployees, searchEmployees, deleteEmployee } from '../api/employees';
@@ -22,11 +22,15 @@ export default function Employees() {
     useSearch
       ? searchEmployees({
           department: filters.department || undefined,
-          position: filters.position || undefined,
+          position: filters.position || undefined
         })
       : getEmployees();
 
   const { data, isLoading, isFetching, refetch } = useQuery({ queryKey, queryFn });
+
+  useEffect(() => {
+    refetch();
+  }, [useSearch]);
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -36,25 +40,26 @@ export default function Employees() {
   const onDelete = async (id) => {
     if (!window.confirm('Delete this employee?')) return;
     await deleteEmployee(id);
-    qc.invalidateQueries({ queryKey: ['employees', 'all'] });
+    qc.invalidateQueries({ queryKey: ['employees'] });
     qc.invalidateQueries({
-      queryKey: ['employees', 'search', filters.department, filters.position],
+      queryKey: ['employees', 'search', filters.department, filters.position]
     });
   };
 
   const onSubmitFilters = (e) => {
     e?.preventDefault();
-    setUseSearch(true);      // queryKey changes -> auto refetch
-    refetch();               // optional immediate refresh
+    setUseSearch(true);
+    refetch();
   };
 
   const onClear = () => {
     setFilters({ department: '', position: '' });
-    setUseSearch(false);     // queryKey changes -> auto refetch
+    setUseSearch(false);
   };
 
   return (
     <div style={wrap}>
+      {/* Sidebar */}
       <aside style={sidebar}>
         <h3 style={{ margin: '0 0 16px' }}>Filters</h3>
         <form onSubmit={onSubmitFilters}>
@@ -88,6 +93,7 @@ export default function Employees() {
         <button onClick={logout} style={{ ...btnGhost, marginTop: 8 }}>Logout</button>
       </aside>
 
+      {/* Main content */}
       <main style={content}>
         <div style={headerRow}>
           <h2 style={{ margin: 0 }}>Employees</h2>
@@ -134,22 +140,16 @@ export default function Employees() {
                       : <span style={{ color: '#999' }}>—</span>}
                   </td>
                   <td style={td}>
-                    <button
-                      onClick={() => nav(`/employees/${emp._id}`)}
-                      style={{ ...btnGhost, marginRight: 8 }}
-                    >
-                      View
-                    </button>
-                    <button
-                      onClick={() => nav(`/employees/${emp._id}/edit`)}
-                      style={{ ...btnGhost, marginRight: 8 }}
-                    >
-                      Edit
-                    </button>
-                    <button onClick={() => onDelete(emp._id)} style={{ ...btnDanger }}>
-                      Delete
-                    </button>
-                  </td>
+  <button onClick={() => nav(`/employees/${emp._id}`)} style={{ ...btnGhost, marginRight: 8 }}>
+    View
+  </button>
+  <button onClick={() => nav(`/employees/${emp._id}/edit`)} style={{ ...btnGhost, marginRight: 8 }}>
+    Edit
+  </button>
+  <button onClick={() => onDelete(emp._id)} style={{ ...btnDanger }}>
+    Delete
+  </button>
+</td>
                 </tr>
               ))}
             </tbody>
@@ -160,14 +160,14 @@ export default function Employees() {
   );
 }
 
-/* styles */
+/*  inline styles  */
 const wrap = {
   display: 'grid',
   gridTemplateColumns: '260px 1fr',
   gap: 16,
   maxWidth: 1200,
   margin: '24px auto',
-  fontFamily: 'system-ui',
+  fontFamily: 'system-ui'
 };
 const sidebar = {
   border: '1px solid #eaeaea',
@@ -175,7 +175,7 @@ const sidebar = {
   padding: 16,
   height: 'fit-content',
   position: 'sticky',
-  top: 24,
+  top: 24
 };
 const content = { minWidth: 0 };
 const headerRow = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 };
@@ -189,17 +189,17 @@ const td = { padding: 10, borderBottom: '1px solid #f6f6f6', fontSize: 14, verti
 
 const btnPrimary = {
   padding: '8px 12px', border: '1px solid #0a7', background: '#0a7',
-  color: 'white', borderRadius: 8, cursor: 'pointer',
+  color: 'white', borderRadius: 8, cursor: 'pointer'
 };
 const btnGhost = {
   padding: '8px 12px', border: '1px solid #ddd', background: 'white',
-  color: '#333', borderRadius: 8, cursor: 'pointer',
+  color: '#333', borderRadius: 8, cursor: 'pointer'
 };
 const btnDanger = {
   padding: '8px 12px', border: '1px solid #e33', background: '#e33',
-  color: 'white', borderRadius: 8, cursor: 'pointer',
+  color: 'white', borderRadius: 8, cursor: 'pointer'
 };
 const pill = {
   fontSize: 12, background: '#eef7ff', color: '#247',
-  padding: '4px 8px', borderRadius: 999,
+  padding: '4px 8px', borderRadius: 999
 };
